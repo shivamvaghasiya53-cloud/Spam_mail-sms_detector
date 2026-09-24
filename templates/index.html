@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Spam Detector</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="header">
+
+        <h1>AI Spam Detector</h1>
+
+        <p>
+            Detect spam in SMS messages and emails using Deep Learning
+        </p>
+
+    </div>
+
+
+
+    <!-- ================= MAIN CARD ================= -->
+
+    <div class="card">
+
+        <label for="message">
+            Enter your SMS or Email
+        </label>
+
+
+        <textarea
+            id="message"
+            placeholder="Paste your SMS or email here..."
+            maxlength="20000"></textarea>
+
+
+        <!-- Character Counter -->
+
+        <div class="bottom-row">
+
+            <span id="counter">
+                0 characters
+            </span>
+
+
+            <button
+                id="clearBtn"
+                class="clear-btn">
+
+                Clear
+
+            </button>
+
+        </div>
+
+
+
+        <!-- Analyze Button -->
+
+        <button
+            id="checkBtn"
+            class="check-btn">
+
+            Analyze Message
+
+        </button>
+
+
+
+        <!-- Loading -->
+
+        <div
+            id="loading"
+            class="loading hidden">
+
+            <div class="spinner"></div>
+
+            <span>
+                Analyzing message...
+            </span>
+
+        </div>
+
+
+
+        <!-- ================= RESULT ================= -->
+
+        <div
+            id="resultBox"
+            class="result-box hidden">
+
+
+            <div
+                id="resultIcon"
+                class="result-icon">
+
+                ✓
+
+            </div>
+
+
+            <h2 id="resultText">
+                NOT SPAM
+            </h2>
+
+
+            <p id="confidenceText">
+                Confidence: 95%
+            </p>
+
+
+            <div class="confidence-container">
+
+                <div
+                    id="confidenceBar"
+                    class="confidence-bar">
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- Error -->
+
+        <div
+            id="errorBox"
+            class="error-box hidden">
+
+            <span id="errorText"></span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================= PREDICTION HISTORY ================= -->
+
+    <div class="history-card">
+
+
+        <div class="history-header">
+
+            <h2>
+                Prediction History
+            </h2>
+
+
+            <button
+                id="clearHistoryBtn"
+                class="clear-history-btn">
+
+                Clear History
+
+            </button>
+
+        </div>
+
+
+        <div
+            id="historyList"
+            class="history-list">
+
+            <p class="no-history">
+                No predictions yet.
+            </p>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================= INFORMATION ================= -->
+
+    <div class="info">
+
+
+        <div class="info-card">
+
+            <h3>
+                🧠 Deep Learning
+            </h3>
+
+            <p>
+                Uses a trained neural network model
+                to analyze message content.
+            </p>
+
+        </div>
+
+
+
+        <div class="info-card">
+
+            <h3>
+                📧 SMS & Email
+            </h3>
+
+            <p>
+                Analyze both short SMS messages
+                and long email content.
+            </p>
+
+        </div>
+
+
+
+        <div class="info-card">
+
+            <h3>
+                📊 Confidence
+            </h3>
+
+            <p>
+                Shows the model's confidence
+                for every prediction.
+            </p>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <footer>
+
+        <p>
+            AI Spam Detection System • Deep Learning Project
+        </p>
+
+    </footer>
+
+
+</div>
+
+
+
+<!-- ================= JAVASCRIPT ================= -->
+
+<script>
+
+
+// ==================================================
+// ELEMENTS
+// ==================================================
+
+const messageInput =
+    document.getElementById("message");
+
+const checkBtn =
+    document.getElementById("checkBtn");
+
+const clearBtn =
+    document.getElementById("clearBtn");
+
+const counter =
+    document.getElementById("counter");
+
+const loading =
+    document.getElementById("loading");
+
+const resultBox =
+    document.getElementById("resultBox");
+
+const resultText =
+    document.getElementById("resultText");
+
+const confidenceText =
+    document.getElementById("confidenceText");
+
+const confidenceBar =
+    document.getElementById("confidenceBar");
+
+const resultIcon =
+    document.getElementById("resultIcon");
+
+const errorBox =
+    document.getElementById("errorBox");
+
+const errorText =
+    document.getElementById("errorText");
+
+const historyList =
+    document.getElementById("historyList");
+
+const clearHistoryBtn =
+    document.getElementById("clearHistoryBtn");
+
+
+
+// ==================================================
+// CHARACTER COUNTER
+// ==================================================
+
+messageInput.addEventListener(
+    "input",
+    function () {
+
+        const length =
+            messageInput.value.length;
+
+        counter.textContent =
+            length + " characters";
+
+    }
+);
+
+
+
+// ==================================================
+// CLEAR MESSAGE
+// ==================================================
+
+clearBtn.addEventListener(
+    "click",
+    function () {
+
+        messageInput.value = "";
+
+        counter.textContent =
+            "0 characters";
+
+        resultBox.classList.add("hidden");
+
+        errorBox.classList.add("hidden");
+
+        messageInput.focus();
+
+    }
+);
+
+
+
+// ==================================================
+// ANALYZE MESSAGE
+// ==================================================
+
+checkBtn.addEventListener(
+    "click",
+    async function () {
+
+
+        const message =
+            messageInput.value.trim();
+
+
+        // Check empty input
+
+        if (!message) {
+
+            showError(
+                "Please enter an SMS or email first."
+            );
+
+            return;
+
+        }
+
+
+        // Hide previous result
+
+        resultBox.classList.add("hidden");
+
+        errorBox.classList.add("hidden");
+
+
+        // Show loading
+
+        loading.classList.remove("hidden");
+
+        checkBtn.disabled = true;
+
+
+        try {
+
+
+            // Send message to Flask
+
+            const response =
+                await fetch(
+                    "/predict",
+                    {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            message: message
+                        })
+
+                    }
+                );
+
+
+            const data =
+                await response.json();
+
+
+            // Check server response
+
+            if (!response.ok) {
+
+                throw new Error(
+                    data.error ||
+                    "Prediction failed."
+                );
+
+            }
+
+
+            // Hide loading
+
+            loading.classList.add("hidden");
+
+
+            // Show result
+
+            resultBox.classList.remove(
+                "hidden"
+            );
+
+
+            const confidence =
+                data.confidence;
+
+
+            resultText.textContent =
+                data.result;
+
+
+            confidenceText.textContent =
+                "Confidence: " +
+                confidence +
+                "%";
+
+
+            confidenceBar.style.width =
+                confidence + "%";
+
+
+
+            // ===============================
+            // RESULT STYLE
+            // ===============================
+
+            if (
+                data.result === "SPAM"
+            ) {
+
+
+                resultBox.className =
+                    "result-box spam";
+
+
+                resultIcon.textContent =
+                    "⚠";
+
+
+            }
+
+            else {
+
+
+                resultBox.className =
+                    "result-box safe";
+
+
+                resultIcon.textContent =
+                    "✓";
+
+            }
+
+
+
+            // ===============================
+            // SAVE PREDICTION HISTORY
+            // ===============================
+
+            saveHistory(
+                message,
+                data.result,
+                confidence
+            );
+
+
+        }
+
+
+        catch (error) {
+
+
+            loading.classList.add(
+                "hidden"
+            );
+
+
+            showError(
+                error.message ||
+                "Unable to analyze the message."
+            );
+
+        }
+
+
+        checkBtn.disabled = false;
+
+    }
+);
+
+
+
+// ==================================================
+// SHOW ERROR
+// ==================================================
+
+function showError(message) {
+
+    errorBox.classList.remove(
+        "hidden"
+    );
+
+    errorText.textContent =
+        message;
+
+    resultBox.classList.add(
+        "hidden"
+    );
+
+}
+
+
+
+// ==================================================
+// SAVE HISTORY
+// ==================================================
+
+function saveHistory(
+    message,
+    result,
+    confidence
+) {
+
+
+    // Get existing history
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "predictionHistory"
+            )
+        ) || [];
+
+
+    // Create new prediction
+
+    const newPrediction = {
+
+        message: message,
+
+        result: result,
+
+        confidence: confidence,
+
+        time:
+            new Date().toLocaleString()
+
+    };
+
+
+    // Add newest prediction at top
+
+    history.unshift(
+        newPrediction
+    );
+
+
+    // Keep only latest 20
+
+    if (
+        history.length > 20
+    ) {
+
+        history.pop();
+
+    }
+
+
+    // Save to browser
+
+    localStorage.setItem(
+        "predictionHistory",
+        JSON.stringify(history)
+    );
+
+
+    // Refresh history display
+
+    loadHistory();
+
+}
+
+
+
+// ==================================================
+// LOAD HISTORY
+// ==================================================
+
+function loadHistory() {
+
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "predictionHistory"
+            )
+        ) || [];
+
+
+    // No history
+
+    if (
+        history.length === 0
+    ) {
+
+        historyList.innerHTML =
+            `
+            <p class="no-history">
+                No predictions yet.
+            </p>
+            `;
+
+        return;
+
+    }
+
+
+    // Clear current list
+
+    historyList.innerHTML = "";
+
+
+    // Display each prediction
+
+    history.forEach(
+        function (item) {
+
+
+            const historyItem =
+                document.createElement(
+                    "div"
+                );
+
+
+            historyItem.className =
+                "history-item";
+
+
+            const resultClass =
+                item.result === "SPAM"
+                    ? "spam"
+                    : "safe";
+
+
+            historyItem.innerHTML =
+                `
+                <div
+                    class="history-result ${resultClass}">
+
+                    ${item.result}
+                    —
+                    ${item.confidence}%
+
+                </div>
+
+
+                <div
+                    class="history-message">
+
+                    ${escapeHtml(
+                        item.message
+                    )}
+
+                </div>
+
+
+                <div
+                    class="history-time">
+
+                    ${item.time}
+
+                </div>
+                `;
+
+
+            historyList.appendChild(
+                historyItem
+            );
+
+        }
+    );
+
+}
+
+
+
+// ==================================================
+// PROTECT HISTORY DISPLAY
+// ==================================================
+
+function escapeHtml(text) {
+
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+
+    div.textContent =
+        text;
+
+
+    return div.innerHTML;
+
+}
+
+
+
+// ==================================================
+// CLEAR ALL HISTORY
+// ==================================================
+
+clearHistoryBtn.addEventListener(
+    "click",
+    function () {
+
+
+        localStorage.removeItem(
+            "predictionHistory"
+        );
+
+
+        loadHistory();
+
+    }
+);
+
+
+
+// ==================================================
+// LOAD HISTORY WHEN WEBSITE OPENS
+// ==================================================
+
+loadHistory();
+
+
+</script>
+
+
+</body>
+
+</html>
